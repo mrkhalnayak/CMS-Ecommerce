@@ -3,8 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependency manifests
-COPY package.json package-lock.json ./
+# Copy dependency manifests using a wildcard to be more robust
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
