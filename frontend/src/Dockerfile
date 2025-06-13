@@ -1,16 +1,28 @@
-# Stage 1: Build the React app
-FROM node:18-alpine as build
+# Stage 1: Build the React Application
+FROM node:18-alpine AS builder
+
 WORKDIR /app
-COPY package*.json ./
+
+# Copy dependency manifests
+COPY package.json package-lock.json ./
+
+# Install dependencies
 RUN npm install
-COPY . ./
+
+# Copy the rest of the application files
+COPY . .
+
+# Build the static files for production
 RUN npm run build
 
-# Stage 2: Serve the app with Nginx
+# --- Stage 2: Serve the built assets with Nginx ---
 FROM nginx:1.21-alpine
-# Copy the built assets from the 'build' stage
-COPY --from=build /app/build /usr/share/nginx/html
-# Nginx serves on port 80 by default
+
+# Copy only the built artifacts from the 'builder' stage
+COPY --from=builder /app/build /usr/share/nginx/html
+
+# Tell Docker that the container listens on port 80
 EXPOSE 80
-# When the container starts, nginx will start
+
+# The default Nginx command starts the server.
 CMD ["nginx", "-g", "daemon off;"]
