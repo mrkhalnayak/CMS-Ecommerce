@@ -1,0 +1,9 @@
+# Ignore dependencies, as they are installed inside the container
+node_modules
+
+# Ignore build output, as it's generated inside the container
+build
+
+# Ignore miscellaneous
+.DS_Store
+npm-debug.log
