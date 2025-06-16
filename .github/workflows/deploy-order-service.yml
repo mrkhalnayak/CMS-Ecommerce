@@ -10,14 +10,17 @@ env:
   # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/order-service # IMPORTANT: Replace with your repo
   SERVICE_DIRECTORY: services/order-service
-  K8S_DEPLOYMENT_NAME: eks/order-service-deployment
+  K8S_DEPLOYMENT_NAME: order-service
   K8S_CONTAINER_NAME: order-service
+  K8S_NAMESPACE: micro-shop
+  SERVICE_NAME: order-service
   # ----------------------------------------------
 
 jobs:
   build-and-deploy:
-    name: Build, Push, and Deploy Order Service
+    name: Build, Push, and Deploy User Service
     runs-on: ubuntu-latest
+
     permissions:
       id-token: write
       contents: read
@@ -48,9 +51,13 @@ jobs:
       - name: 5. Connect to EKS Cluster
         run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
-      - name: 6. Deploy to EKS by Updating Image
+      - name: 6. Inject SHA Tag into Manifest
         run: |
-          kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
-          ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
-          
-          echo "✅ Deployment initiated for ${{ env.SERVICE_NAME }}. Kubernetes is now performing a rolling update."
+          IMAGE_TAG=${{ github.sha }}
+          sed -i "s|image:.*user-service:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/user-service-deployment.yaml
+
+      - name: 7. Apply Updated Manifest
+        run: |
+          kubectl apply -f eks/order-service-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+
+          echo "✅ Deployment done for ${{ env.SERVICE_NAME }} using image ${{ github.sha }}"
