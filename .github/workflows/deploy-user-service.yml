@@ -9,7 +9,7 @@ on:
 env:
   DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/user-service
   SERVICE_DIRECTORY: services/user-service
-  K8S_DEPLOYMENT_NAME: user-service-deployment
+  K8S_DEPLOYMENT_NAME: eks/user-service-deployment
   K8S_CONTAINER_NAME: user-service
   K8S_NAMESPACE: micro-shop  # Change this if your app is not in the 'default' namespace
 
