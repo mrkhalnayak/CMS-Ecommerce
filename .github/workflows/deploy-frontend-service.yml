@@ -58,6 +58,6 @@ jobs:
 
       - name: 7. Apply Updated Manifest
         run: |
-          kubectl apply -f eks/frontend-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f eks/frontend-deployment.yml -n ${{ env.K8S_NAMESPACE }}
 
           echo "✅ Deployment done for ${{ env.SERVICE_NAME }} using image ${{ github.sha }}"

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: ${{secrets.DOCKERHUB_USERNAME}}/product-service:latest
+          image: your-dockerhub-username/product-service:latest
           ports:
             - containerPort: 3002
           env:

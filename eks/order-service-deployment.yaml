@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: ${{secrets.DOCKERHUB_USERNAME}}/order-service:latest
+          image: your-dockerhub-username/order-service:latest
           ports:
             - containerPort: 3003
           env:

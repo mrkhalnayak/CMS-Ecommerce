@@ -53,3 +53,4 @@ app.listen(port, () => {
     console.log(`Product service listening on port ${port}`);
 });
 
+
