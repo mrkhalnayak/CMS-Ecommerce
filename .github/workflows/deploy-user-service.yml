@@ -4,25 +4,23 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      # This workflow ONLY runs if files change in this directory
       - 'services/user-service/**'
 
 env:
-  # --- Configuration for this specific service ---
-  DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/user-service # IMPORTANT: Replace with your repo
+  DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/user-service
   SERVICE_DIRECTORY: services/user-service
   K8S_DEPLOYMENT_NAME: user-service-deployment
   K8S_CONTAINER_NAME: user-service
-  K8S_NAMESPACE: micro-shop
-  # ----------------------------------------------
+  K8S_NAMESPACE: micro-shop  # Change this if your app is not in the 'default' namespace
 
 jobs:
   build-and-deploy:
     name: Build, Push, and Deploy User Service
     runs-on: ubuntu-latest
+
     permissions:
-      id-token: write # Required for AWS OIDC to get a token
-      contents: read   # Required to check out the repository
+      id-token: write
+      contents: read
 
     steps:
       - name: 1. Checkout Code
@@ -48,12 +46,17 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: 5. Connect to EKS Cluster
-        run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
-
-      - name: 6. Deploy to EKS by Updating Image
         run: |
-             kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
-             ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }} \
-             -n ${{ env.K8S_NAMESPACE }}
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
-              echo "✅ Deployment initiated for ${{ env.K8S_CONTAINER_NAME }}."
+      - name: 6. Apply Kubernetes Manifest (in case deployment is missing)
+        run: |
+          kubectl apply -f ${{ env.SERVICE_DIRECTORY }}/k8s/deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+
+      - name: 7. Deploy to EKS by Updating Image
+        run: |
+          kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
+          ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }} \
+          -n ${{ env.K8S_NAMESPACE }}
+
+          echo "✅ Deployment initiated for ${{ env.K8S_DEPLOYMENT_NAME }}. Kubernetes is performing a rolling update."
