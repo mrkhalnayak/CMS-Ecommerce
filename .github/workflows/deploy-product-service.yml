@@ -10,7 +10,7 @@ env:
   # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/product-service # IMPORTANT: Replace with your repo
   SERVICE_DIRECTORY: services/product-service
-  K8S_DEPLOYMENT_NAME: product-service-deployment
+  K8S_DEPLOYMENT_NAME: eks/product-service-deployment
   K8S_CONTAINER_NAME: product-service
   # ----------------------------------------------
 

@@ -10,7 +10,7 @@ env:
   # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/frontend # IMPORTANT: Replace with your repo
   SERVICE_DIRECTORY: frontend
-  K8S_DEPLOYMENT_NAME: frontend-deployment
+  K8S_DEPLOYMENT_NAME: eks/frontend-deployment
   K8S_CONTAINER_NAME: frontend
   # ----------------------------------------------
 

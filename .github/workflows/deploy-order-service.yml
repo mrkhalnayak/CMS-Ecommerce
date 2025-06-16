@@ -10,7 +10,7 @@ env:
   # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/order-service # IMPORTANT: Replace with your repo
   SERVICE_DIRECTORY: services/order-service
-  K8S_DEPLOYMENT_NAME: order-service-deployment
+  K8S_DEPLOYMENT_NAME: eks/order-service-deployment
   K8S_CONTAINER_NAME: order-service
   # ----------------------------------------------
 

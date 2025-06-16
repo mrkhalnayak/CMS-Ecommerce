@@ -11,7 +11,7 @@ env:
   # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/user-service # IMPORTANT: Replace with your repo
   SERVICE_DIRECTORY: services/user-service
-  K8S_DEPLOYMENT_NAME: user-service-deployment
+  K8S_DEPLOYMENT_NAME: eks/user-service-deployment
   K8S_CONTAINER_NAME: user-service
   # ----------------------------------------------
 
