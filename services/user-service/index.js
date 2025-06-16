@@ -55,4 +55,3 @@ app.listen(port, () => {
     console.log(`User service listening on port ${port}`);
 });
 
-echo "# Initialy deployment trigger" >> services/order-service/index.js
