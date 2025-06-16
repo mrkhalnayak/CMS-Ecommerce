@@ -1,0 +1,56 @@
+name: CI/CD - Deploy Order Service
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'services/order-service/**'
+
+env:
+  # --- Configuration for this specific service ---
+  DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/order-service # IMPORTANT: Replace with your repo
+  SERVICE_DIRECTORY: services/order-service
+  K8S_DEPLOYMENT_NAME: order-service-deployment
+  K8S_CONTAINER_NAME: order-service
+  # ----------------------------------------------
+
+jobs:
+  build-and-deploy:
+    name: Build, Push, and Deploy Order Service
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 2. Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 3. Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ env.SERVICE_DIRECTORY }}
+          push: true
+          tags: ${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
+
+      - name: 4. Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.EKS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 5. Connect to EKS Cluster
+        run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+
+      - name: 6. Deploy to EKS by Updating Image
+        run: |
+          kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
+          ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
+          
+          echo "✅ Deployment initiated for ${{ env.SERVICE_NAME }}. Kubernetes is now performing a rolling update."
