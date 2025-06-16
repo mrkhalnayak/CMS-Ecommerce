@@ -54,3 +54,5 @@ app.listen(port, () => {
     connectToDb();
     console.log(`User service listening on port ${port}`);
 });
+
+echo "# Initial deployment trigger" >> services/order-service/index.js
