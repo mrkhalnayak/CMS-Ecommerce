@@ -55,7 +55,7 @@ jobs:
 
       - name: 7. Deploy to EKS by Updating Image
         run: |
-          kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
+          kubectl set image eks/${{ env.K8S_DEPLOYMENT_NAME }} \
           ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }} \
           -n ${{ env.K8S_NAMESPACE }}
 
