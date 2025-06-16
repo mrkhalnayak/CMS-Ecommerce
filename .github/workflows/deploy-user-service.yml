@@ -11,8 +11,9 @@ env:
   # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/user-service # IMPORTANT: Replace with your repo
   SERVICE_DIRECTORY: services/user-service
-  K8S_DEPLOYMENT_NAME: eks/user-service-deployment
+  K8S_DEPLOYMENT_NAME: user-service-deployment
   K8S_CONTAINER_NAME: user-service
+  K8S_NAMESPACE: micro-shop
   # ----------------------------------------------
 
 jobs:
@@ -51,7 +52,8 @@ jobs:
 
       - name: 6. Deploy to EKS by Updating Image
         run: |
-          kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
-          ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
-          
-          echo "✅ Deployment initiated for ${{ env.SERVICE_NAME }}. Kubernetes is now performing a rolling update."
+             kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
+             ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }} \
+             -n ${{ env.K8S_NAMESPACE }}
+
+              echo "✅ Deployment initiated for ${{ env.K8S_CONTAINER_NAME }}."
