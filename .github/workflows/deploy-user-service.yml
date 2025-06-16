@@ -9,9 +9,9 @@ on:
 env:
   DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/user-service
   SERVICE_DIRECTORY: services/user-service
-  K8S_DEPLOYMENT_NAME: user-service      # Make sure this matches `metadata.name`
+  K8S_DEPLOYMENT_NAME: user-service              # ✅ Must match manifest
   K8S_CONTAINER_NAME: user-service
-  K8S_NAMESPACE: micro-shop
+  K8S_NAMESPACE: micro-shop                      # ✅ Make sure this namespace exists
   SERVICE_NAME: user-service
 
 jobs:
@@ -50,7 +50,8 @@ jobs:
         run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
       - name: 6. Apply Kubernetes Manifest
-        run: kubectl apply -f eks/user-service-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+        run: |
+          kubectl apply -f eks/user-service.yaml -n ${{ env.K8S_NAMESPACE }}
 
       - name: 7. Update Deployment Image
         run: |
