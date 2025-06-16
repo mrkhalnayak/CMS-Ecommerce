@@ -9,9 +9,9 @@ on:
 env:
   DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/user-service
   SERVICE_DIRECTORY: services/user-service
-  K8S_DEPLOYMENT_NAME: user-service              # ✅ Must match manifest
+  K8S_DEPLOYMENT_NAME: user-service
   K8S_CONTAINER_NAME: user-service
-  K8S_NAMESPACE: micro-shop                      # ✅ Make sure this namespace exists
+  K8S_NAMESPACE: micro-shop
   SERVICE_NAME: user-service
 
 jobs:
@@ -49,14 +49,13 @@ jobs:
       - name: 5. Connect to EKS Cluster
         run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
-      - name: 6. Apply Kubernetes Manifest
+      - name: 6. Inject SHA Tag into Manifest
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          sed -i "s|image:.*user-service:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/user-service-deployment.yaml
+
+      - name: 7. Apply Updated Manifest
         run: |
           kubectl apply -f eks/user-service-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
 
-      - name: 7. Update Deployment Image
-        run: |
-          kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
-          ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }} \
-          -n ${{ env.K8S_NAMESPACE }}
-
-          echo "✅ Deployment initiated for ${{ env.SERVICE_NAME }}."
+          echo "✅ Deployment done for ${{ env.SERVICE_NAME }} using image ${{ github.sha }}"
