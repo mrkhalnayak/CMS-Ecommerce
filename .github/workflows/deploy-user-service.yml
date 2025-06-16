@@ -9,9 +9,9 @@ on:
 env:
   DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/user-service
   SERVICE_DIRECTORY: services/user-service
-  K8S_DEPLOYMENT_NAME: eks/user-service-deployment
+  K8S_DEPLOYMENT_NAME: user-service-deployment
   K8S_CONTAINER_NAME: user-service
-  K8S_NAMESPACE: micro-shop  # Change this if your app is not in the 'default' namespace
+  K8S_NAMESPACE: micro-shop  # Update if needed
 
 jobs:
   build-and-deploy:
@@ -49,14 +49,14 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
-      - name: 6. Apply Kubernetes Manifest (in case deployment is missing)
+      - name: 6. Apply Kubernetes Manifest
         run: |
-          kubectl apply -f ${{ env.SERVICE_DIRECTORY }}/k8s/deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f eks/user-service-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
 
-      - name: 7. Deploy to EKS by Updating Image
+      - name: 7. Update Deployment Image
         run: |
-          kubectl set image eks/${{ env.K8S_DEPLOYMENT_NAME }} \
+          kubectl set image deployment/${{ env.K8S_DEPLOYMENT_NAME }} \
           ${{ env.K8S_CONTAINER_NAME }}=${{ env.DOCKERHUB_REPO }}:${{ github.sha }} \
           -n ${{ env.K8S_NAMESPACE }}
 
-          echo "✅ Deployment initiated for ${{ env.K8S_DEPLOYMENT_NAME }}. Kubernetes is performing a rolling update."
+          echo "✅ Deployment initiated for ${{ env.K8S_DEPLOYMENT_NAME }}."
