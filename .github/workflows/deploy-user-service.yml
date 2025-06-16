@@ -51,7 +51,7 @@ jobs:
 
       - name: 6. Apply Kubernetes Manifest
         run: |
-          kubectl apply -f user-service-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f eks/user-service-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
 
       - name: 7. Update Deployment Image
         run: |
