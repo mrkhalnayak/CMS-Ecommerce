@@ -7,22 +7,25 @@ spec:
     spec:
       containers:
       - name: db-init
-        image: postgres:13
+        image: mysql:5.7
         envFrom:
           - secretRef:
               name: db-secret
-        command: ["psql"]
-        args: [
-          "-h", "$(DB_HOST)",
-          "-U", "$(DB_USER)",
-          "-d", "$(DB_NAME)",
-          "-f", "/sql/schema.sql"
-        ]
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo "Waiting for database to be ready...";
+            while ! mysqladmin ping -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" --silent; do
+              sleep 5;
+            done;
+            echo "Initializing database...";
+            mysql -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < /sql/schema.sql;
+            echo "Database initialized successfully";
         volumeMounts:
         - name: sql-volume
           mountPath: /sql
-      restartPolicy: OnFailure
       volumes:
       - name: sql-volume
         configMap:
           name: schema-sql
+      restartPolicy: OnFailure

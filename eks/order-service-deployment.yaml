@@ -33,7 +33,7 @@ spec:
                   name: db-secret
                   key: DB_PASSWORD
             - name: DB_NAME
-              value: "micro-shop-ecom-db"
+              value: "database-1"
 ---
 apiVersion: v1
 kind: Service
