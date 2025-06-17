@@ -4,8 +4,6 @@ metadata:
   name: microshop-ingress
   namespace: micro-shop
   annotations:
-    # This is the only annotation you need. It tells Kubernetes to use the
-    # NGINX Ingress controller that you have installed.
     kubernetes.io/ingress.class: "nginx"
 spec:
   ingressClassName: nginx
@@ -13,39 +11,41 @@ spec:
   - http:
       paths:
       # --- Backend API Rules ---
-      # When the URL path starts with /api/users, send it to the user-service-svc
+      
       - path: /api/users
         pathType: Prefix
         backend:
           service:
-            name: user-service-svc
+            # CORRECTED: Name changed from user-service-svc to user-service
+            name: user-service
             port:
               number: 3001
 
-      # When the URL path starts with /api/products, send it to the product-service-svc
       - path: /api/products
         pathType: Prefix
         backend:
           service:
-            name: product-service-svc
+            # CORRECTED: Name changed from product-service-svc to product-service
+            name: product-service
             port:
               number: 3002
 
-      # When the URL path starts with /api/orders, send it to the order-service-svc
       - path: /api/orders
         pathType: Prefix
         backend:
           service:
-            name: order-service-svc
+            # CORRECTED: Name changed from order-service-svc to order-service
+            name: order-service
             port:
               number: 3003
       
       # --- Frontend Rule (Default/Catch-all) ---
-      # When the URL path starts with /, send it to the frontend-svc
+      
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: frontend-svc
+            # CORRECTED: Name changed from frontend-svc to frontend
+            name: frontend
             port:
               number: 80
