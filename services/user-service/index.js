@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database configuration (no changes here)
+// Database configuration (unchanged)
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -16,7 +16,7 @@ const dbConfig = {
 
 let connection;
 
-// Function to connect to the database (no changes here)
+// Database connection (unchanged)
 async function connectToDb() {
     try {
         connection = await mysql.createConnection(dbConfig);
@@ -27,17 +27,17 @@ async function connectToDb() {
     }
 }
 
-// --- NEW: Create a dedicated router for our API endpoints ---
+// Create router
 const apiRouter = express.Router();
 
-// --- NEW: Tell the main app to use this router for any path starting with /api ---
-// This is the key change. It makes your app understand the /api prefix.
-app.use('/api/user', apiRouter);
+// Mount router at /api/users to match ingress
+app.use('/api/users', apiRouter);
 
+// Routes now only need to handle the specific endpoints
+// since /api/users is already handled by the router mounting
 
-// --- CHANGED: All routes are now defined on 'apiRouter' instead of 'app' ---
-// The paths here remain simple because the '/api' prefix is handled by app.use()
-apiRouter.get('/api/user/users', async (req, res) => {
+// GET /api/users/ (matches ingress path)
+apiRouter.get('/', async (req, res) => {
     try {
         const [rows] = await connection.execute('SELECT * FROM users');
         res.json(rows);
@@ -46,7 +46,8 @@ apiRouter.get('/api/user/users', async (req, res) => {
     }
 });
 
-apiRouter.get('/users/:id', async (req, res) => {
+// GET /api/users/:id (matches ingress path + ID)
+apiRouter.get('/:id', async (req, res) => {
     try {
         const [rows] = await connection.execute('SELECT * FROM users WHERE id = ?', [req.params.id]);
         if (rows.length > 0) {
@@ -59,7 +60,7 @@ apiRouter.get('/users/:id', async (req, res) => {
     }
 });
 
-// Server startup logic (no changes here)
+// Server startup
 const port = 3001;
 app.listen(port, () => {
     connectToDb();
