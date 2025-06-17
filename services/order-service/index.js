@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
-const axios = require('axios'); // For inter-service communication
+const axios = require('axios'); // For inter-service communication of services
 
 const app = express();
 app.use(cors());
