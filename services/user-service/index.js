@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database configuration loaded from environment variables
+// Database configuration (no changes here)
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -16,7 +16,7 @@ const dbConfig = {
 
 let connection;
 
-// Function to connect to the database with retries
+// Function to connect to the database (no changes here)
 async function connectToDb() {
     try {
         connection = await mysql.createConnection(dbConfig);
@@ -27,7 +27,17 @@ async function connectToDb() {
     }
 }
 
-app.get('/users', async (req, res) => {
+// --- NEW: Create a dedicated router for our API endpoints ---
+const apiRouter = express.Router();
+
+// --- NEW: Tell the main app to use this router for any path starting with /api ---
+// This is the key change. It makes your app understand the /api prefix.
+app.use('/api', apiRouter);
+
+
+// --- CHANGED: All routes are now defined on 'apiRouter' instead of 'app' ---
+// The paths here remain simple because the '/api' prefix is handled by app.use()
+apiRouter.get('/users', async (req, res) => {
     try {
         const [rows] = await connection.execute('SELECT * FROM users');
         res.json(rows);
@@ -36,7 +46,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
-app.get('/users/:id', async (req, res) => {
+apiRouter.get('/users/:id', async (req, res) => {
     try {
         const [rows] = await connection.execute('SELECT * FROM users WHERE id = ?', [req.params.id]);
         if (rows.length > 0) {
@@ -49,9 +59,9 @@ app.get('/users/:id', async (req, res) => {
     }
 });
 
+// Server startup logic (no changes here)
 const port = 3001;
 app.listen(port, () => {
     connectToDb();
     console.log(`User service listening on port ${port}`);
 });
-
