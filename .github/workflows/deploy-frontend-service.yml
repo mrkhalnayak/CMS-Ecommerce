@@ -54,7 +54,7 @@ jobs:
       - name: 6. Inject SHA Tag into Manifest
         run: |
           IMAGE_TAG=${{ github.sha }}
-          sed -i "s|image:.*user-service:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/frontend-service-deployment.yaml
+          sed -i "s|image:.*frontend:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/frontend-deployment.yaml
 
       - name: 7. Apply Updated Manifest
         run: |
