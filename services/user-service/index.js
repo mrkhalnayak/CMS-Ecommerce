@@ -32,12 +32,12 @@ const apiRouter = express.Router();
 
 // --- NEW: Tell the main app to use this router for any path starting with /api ---
 // This is the key change. It makes your app understand the /api prefix.
-app.use('/api', apiRouter);
+app.use('/api/user', apiRouter);
 
 
 // --- CHANGED: All routes are now defined on 'apiRouter' instead of 'app' ---
 // The paths here remain simple because the '/api' prefix is handled by app.use()
-apiRouter.get('/users', async (req, res) => {
+apiRouter.get('/api/user/users', async (req, res) => {
     try {
         const [rows] = await connection.execute('SELECT * FROM users');
         res.json(rows);

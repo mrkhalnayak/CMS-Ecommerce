@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: db-init
+        image: postgres:13
+        envFrom:
+          - secretRef:
+              name: db-secret
+        command: ["psql"]
+        args: [
+          "-h", "$(DB_HOST)",
+          "-U", "$(DB_USER)",
+          "-d", "$(DB_NAME)",
+          "-f", "/sql/schema.sql"
+        ]
+        volumeMounts:
+        - name: sql-volume
+          mountPath: /sql
+      restartPolicy: OnFailure
+      volumes:
+      - name: sql-volume
+        configMap:
+          name: schema-sql
