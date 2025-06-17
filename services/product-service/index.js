@@ -25,7 +25,7 @@ async function connectToDb() {
     }
 }
 
-app.get('/products', async (req, res) => {
+app.get('/api/products', async (req, res) => {
     try {
         const [rows] = await connection.execute('SELECT * FROM products');
         res.json(rows);
@@ -34,7 +34,7 @@ app.get('/products', async (req, res) => {
     }
 });
 
-app.get('/products/:id', async (req, res) => {
+app.get('/:id', async (req, res) => {
     try {
         const [rows] = await connection.execute('SELECT * FROM products WHERE id = ?', [req.params.id]);
         if (rows.length > 0) {
