@@ -1,80 +1,125 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
-const axios = require('axios'); // For inter-service communication of services
+const axios = require('axios');
+const morgan = require('morgan'); // Added for request logging
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
+app.use(morgan('combined')); // Log HTTP requests
 
+// Database configuration with connection pooling and SSL
 const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  ssl: {
+    rejectUnauthorized: false // Required for RDS SSL
+  }
 };
 
-// In Kubernetes, we'll  use the service names for communication.
-// The environment variables will be set in the deployment.yaml file.
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
-const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://localhost:3002';
+// Create connection pool
+const pool = mysql.createPool(dbConfig);
 
-let connection;
+// Service URLs - Kubernetes DNS names
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service';
+const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://product-service';
 
-async function connectToDb() {
-    try {
-        connection = await mysql.createConnection(dbConfig);
-        console.log('Order service connected to MySQL!');
-    } catch (error) {
-        console.error('Failed to connect to DB, retrying in 5 seconds...', error);
-        setTimeout(connectToDb, 5000);
-    }
-}
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
 
-// Endpoint to create an order
+// Order creation endpoint
 app.post('/api/orders', async (req, res) => {
-    const { userId, productId, quantity } = req.body;
+  const { userId, productId, quantity } = req.body;
 
-    if (!userId || !productId || !quantity) {
-        return res.status(400).send('Missing userId, productId, or quantity.');
+  // Input validation
+  if (!userId || !productId || !quantity || quantity <= 0) {
+    return res.status(400).json({ error: 'Invalid input: userId, productId, and positive quantity required' });
+  }
+
+  let connection;
+  try {
+    // 1. Validate user exists
+    await axios.get(`${USER_SERVICE_URL}/api/users/${userId}`, {
+      timeout: 5000 // 5-second timeout
+    });
+
+    // 2. Get product details
+    const productResponse = await axios.get(`${PRODUCT_SERVICE_URL}/api/products/${productId}`, {
+      timeout: 5000
+    });
+    const product = productResponse.data;
+
+    if (product.stock < quantity) {
+      return res.status(400).json({ error: 'Insufficient stock' });
     }
 
-    try {
-        // 1. Validate user exists by calling the User Service
-        await axios.get(`${USER_SERVICE_URL}/users/${userId}`);
+    // 3. Process order in transaction
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
 
-        // 2. Get product details (like price) from the Product Service
-        const productResponse = await axios.get(`${PRODUCT_SERVICE_URL}/products/${productId}`);
-        const product = productResponse.data;
+    const totalPrice = product.price * quantity;
+    
+    // Insert order
+    const [orderResult] = await connection.execute(
+      'INSERT INTO orders (user_id, product_id, quantity, total_price) VALUES (?, ?, ?, ?)',
+      [userId, productId, quantity, totalPrice]
+    );
 
-        if (product.stock < quantity) {
-            return res.status(400).send('Not enough stock!');
-        }
-        
-        const totalPrice = product.price * quantity;
+    // Update product stock (example of inter-service call)
+    await axios.patch(`${PRODUCT_SERVICE_URL}/api/products/${productId}/stock`, {
+      change: -quantity
+    }, { timeout: 5000 });
 
-        // 3. Save the order to the database
-        const [result] = await connection.execute(
-            'INSERT INTO orders (user_id, product_id, quantity, total_price) VALUES (?, ?, ?, ?)',
-            [userId, productId, quantity, totalPrice]
-        );
-        
-        // (Optional) Here you could also make a call to the product service to update the stock.
-        
-        res.status(201).json({ orderId: result.insertId, message: 'Order created successfully!' });
+    await connection.commit();
+    
+    res.status(201).json({
+      orderId: orderResult.insertId,
+      totalPrice,
+      message: 'Order created successfully'
+    });
 
-    } catch (error) {
-        console.error("Error creating order:", error.message);
-        if (error.response && error.response.status === 404) {
-            return res.status(400).send('Invalid user or product ID.');
-        }
-        res.status(500).send('Error creating order.');
+  } catch (error) {
+    if (connection) await connection.rollback();
+    
+    console.error('Order creation failed:', error.message);
+    
+    if (error.response) {
+      // Forward error from other services
+      return res.status(error.response.status).json(error.response.data);
     }
+    
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) connection.release();
+  }
 });
 
-const port = 3003;
-app.listen(port, () => {
-    connectToDb();
-    console.log(`Order service listening on port ${port}`);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
+const PORT = process.env.PORT || 3003;
+app.listen(PORT, () => {
+  console.log(`Order service running on port ${PORT}`);
+  // Test DB connection on startup
+  pool.getConnection()
+    .then(conn => {
+      console.log('Database connection established');
+      conn.release();
+    })
+    .catch(err => {
+      console.error('Database connection failed:', err.message);
+    });
+});
