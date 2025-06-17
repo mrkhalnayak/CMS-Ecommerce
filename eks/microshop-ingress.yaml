@@ -4,34 +4,34 @@ metadata:
   name: microshop-ingress
   namespace: micro-shop
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-          - path: /
+          - path: /()(.*)
             pathType: Prefix
             backend:
               service:
                 name: frontend
                 port:
                   number: 80
-          - path: /user
+          - path: /user(/|$)(.*)
             pathType: Prefix
             backend:
               service:
                 name: user-service
                 port:
                   number: 80
-          - path: /product
+          - path: /product(/|$)(.*)
             pathType: Prefix
             backend:
               service:
                 name: product-service
                 port:
                   number: 80
-          - path: /order
+          - path: /order(/|$)(.*)
             pathType: Prefix
             backend:
               service:
