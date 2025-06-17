@@ -7,14 +7,12 @@ on:
       - 'services/order-service/**'
 
 env:
-  # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/order-service # IMPORTANT: Replace with your repo
   SERVICE_DIRECTORY: services/order-service
   K8S_DEPLOYMENT_NAME: order-service
   K8S_CONTAINER_NAME: order-service
   K8S_NAMESPACE: micro-shop
   SERVICE_NAME: order-service
-  # ----------------------------------------------
 
 jobs:
   build-and-deploy:
@@ -54,7 +52,7 @@ jobs:
       - name: 6. Inject SHA Tag into Manifest
         run: |
           IMAGE_TAG=${{ github.sha }}
-          sed -i "s|image:.*user-service:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/user-service-deployment.yaml
+          sed -i "s|image:.*user-service:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/order-service-deployment.yaml
 
       - name: 7. Apply Updated Manifest
         run: |

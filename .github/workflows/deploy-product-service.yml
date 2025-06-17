@@ -7,14 +7,12 @@ on:
       - 'services/product-service/**'
 
 env:
-  # --- Configuration for this specific service ---
   DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/product-service
   SERVICE_DIRECTORY: services/product-service
-  K8S_DEPLOYMENT_NAME: product-service   # ✅ FIXED: Removed "eks/"
+  K8S_DEPLOYMENT_NAME: product-service
   K8S_CONTAINER_NAME: product-service
   K8S_NAMESPACE: micro-shop
   SERVICE_NAME: product-service
-  # ----------------------------------------------
 
 jobs:
   build-and-deploy:
@@ -54,7 +52,7 @@ jobs:
       - name: 6. Inject SHA Tag into Manifest
         run: |
           IMAGE_TAG=${{ github.sha }}
-          sed -i "s|image:.*user-service:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/user-service-deployment.yaml
+          sed -i "s|image:.*user-service:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/product-service-deployment.yaml
 
       - name: 7. Apply Updated Manifest
         run: |
