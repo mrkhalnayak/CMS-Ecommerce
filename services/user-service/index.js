@@ -60,7 +60,7 @@ apiRouter.get('/:id', async (req, res) => {
     }
 });
 
-// Server startup
+// Server startup!
 const port = 3001;
 app.listen(port, () => {
     connectToDb();

@@ -21,7 +21,7 @@ spec:
             - containerPort: 3002
           env:
             - name: DB_HOST
-              value: "micro-shop-ecom-db.cy7806ig071x.us-east-1.rds.amazonaws.com"
+              value: "database-1.cy7806ig071x.us-east-1.rds.amazonaws.com"
             - name: DB_USER
               valueFrom:
                 secretKeyRef:

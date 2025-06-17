@@ -14,7 +14,7 @@ const dbConfig = {
     database: process.env.DB_NAME
 };
 
-// In Kubernetes, we'll use the service names for communication.
+// In Kubernetes, we'll  use the service names for communication.
 // The environment variables will be set in the deployment.yaml file.
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
 const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://localhost:3002';
