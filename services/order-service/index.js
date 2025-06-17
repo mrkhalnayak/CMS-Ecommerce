@@ -32,7 +32,7 @@ async function connectToDb() {
 }
 
 // Endpoint to create an order
-app.post('/orders', async (req, res) => {
+app.post('/api/orders', async (req, res) => {
     const { userId, productId, quantity } = req.body;
 
     if (!userId || !productId || !quantity) {
