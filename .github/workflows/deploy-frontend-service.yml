@@ -7,18 +7,16 @@ on:
       - 'frontend/**'
 
 env:
-  # --- Configuration for this specific service ---
-  DOCKERHUB_REPO: ${{secrets.DOCKERHUB_USERNAME}}/frontend # IMPORTANT: Replace with your repo
+  DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/frontend
   SERVICE_DIRECTORY: frontend
   K8S_DEPLOYMENT_NAME: frontend
   K8S_CONTAINER_NAME: frontend
   K8S_NAMESPACE: micro-shop
   SERVICE_NAME: frontend
-  # ----------------------------------------------
 
 jobs:
   build-and-deploy:
-    name: Build, Push, and Deploy User Service
+    name: Build, Push, and Deploy Frontend
     runs-on: ubuntu-latest
 
     permissions:
@@ -54,10 +52,9 @@ jobs:
       - name: 6. Inject SHA Tag into Manifest
         run: |
           IMAGE_TAG=${{ github.sha }}
-          sed -i "s|image:.*frontend:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/frontend-deployment.yaml
+          sed -i "s|image:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/frontend-deployment.yaml
 
       - name: 7. Apply Updated Manifest
         run: |
           kubectl apply -f eks/frontend-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
-
           echo "✅ Deployment done for ${{ env.SERVICE_NAME }} using image ${{ github.sha }}"
