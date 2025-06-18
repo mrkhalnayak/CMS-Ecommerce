@@ -9,15 +9,13 @@ on:
 env:
   DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/frontend
   SERVICE_DIRECTORY: frontend
-  K8S_DEPLOYMENT_NAME: frontend
-  K8S_CONTAINER_NAME: frontend
   K8S_NAMESPACE: micro-shop
-  SERVICE_NAME: frontend
 
 jobs:
   build-and-deploy:
     name: Build, Push, and Deploy Frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # Prevents hanging jobs
 
     permissions:
       id-token: write
@@ -26,35 +24,49 @@ jobs:
     steps:
       - name: 1. Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensures full git history
 
-      - name: 2. Login to Docker Hub
+      - name: 2. Verify Frontend Files
+        run: |
+          cd ${{ env.SERVICE_DIRECTORY }}
+          ls -la  # Debugging file structure
+          npm install --legacy-peer-deps  # Ensure dependencies can install
+          npm run build  # Verify build works before Docker
+
+      - name: 3. Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 3. Build and Push Docker Image
+      - name: 4. Build and Push Docker Image
         uses: docker/build-push-action@v4
         with:
           context: ${{ env.SERVICE_DIRECTORY }}
           push: true
           tags: ${{ env.DOCKERHUB_REPO }}:${{ github.sha }}
+          build-args: |
+            NODE_OPTIONS=--max_old_space_size=4096
 
-      - name: 4. Configure AWS Credentials
+      - name: 5. Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.EKS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: 5. Connect to EKS Cluster
+      - name: 6. Connect to EKS Cluster
         run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
-      - name: 6. Inject SHA Tag into Manifest
+      - name: 7. Deploy to EKS
         run: |
-          IMAGE_TAG=${{ github.sha }}
-          sed -i "s|image:.*|image: ${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG}|" eks/frontend-deployment.yaml
-
-      - name: 7. Apply Updated Manifest
-        run: |
-          kubectl apply -f eks/frontend-deployment.yaml -n ${{ env.K8S_NAMESPACE }}
-          echo "✅ Deployment done for ${{ env.SERVICE_NAME }} using image ${{ github.sha }}"
+          export IMAGE_TAG=${{ github.sha }}
+          kubectl set image deployment/frontend \
+            frontend=${{ env.DOCKERHUB_REPO }}:${IMAGE_TAG} \
+            -n ${{ env.K8S_NAMESPACE }}
+          
+          kubectl rollout status deployment/frontend \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --timeout=180s
+          
+          echo "✅ Deployment successful for frontend@${IMAGE_TAG}"
