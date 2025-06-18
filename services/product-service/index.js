@@ -10,47 +10,52 @@ const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    ssl: { rejectUnauthorized: false }
 };
 
-let connection;
+const pool = mysql.createPool(dbConfig);
 
-async function connectToDb() {
-    try {
-        connection = await mysql.createConnection(dbConfig);
-        console.log('Product service connected to MySQL!');
-    } catch (error) {
-        console.error('Failed to connect to DB, retrying in 5 seconds...', error);
-        setTimeout(connectToDb, 5000);
-    }
-}
-
+// Product Catalog
 app.get('/api/products', async (req, res) => {
     try {
-        const [rows] = await connection.execute('SELECT * FROM products');
+        const [rows] = await pool.execute(`
+            SELECT id, name, description, price, stock, image_url 
+            FROM products
+        `);
         res.json(rows);
     } catch (error) {
-        res.status(500).send('Error querying database');
+        res.status(500).json({ error: error.message });
     }
 });
 
-app.get('/:id', async (req, res) => {
+// Product Detail
+app.get('/api/products/:id', async (req, res) => {
     try {
-        const [rows] = await connection.execute('SELECT * FROM products WHERE id = ?', [req.params.id]);
-        if (rows.length > 0) {
-            res.json(rows[0]);
-        } else {
-            res.status(404).send('Product not found');
-        }
+        const [rows] = await pool.execute('SELECT * FROM products WHERE id = ?', [req.params.id]);
+        res.json(rows[0] || {});
     } catch (error) {
-        res.status(500).send('Error querying database');
+        res.status(500).json({ error: error.message });
     }
 });
 
-const port = 3002;
+// Update Stock (called by order service)
+app.patch('/api/products/:id/stock', async (req, res) => {
+    try {
+        const { change } = req.body;
+        await pool.execute(
+            'UPDATE products SET stock = stock + ? WHERE id = ?',
+            [change, req.params.id]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+const port = process.env.PORT || 3002;
 app.listen(port, () => {
-    connectToDb();
     console.log(`Product service listening on port ${port}`);
 });
-
-// Here we are just updating to make changes into the files thats all nothing to be worrry!
