@@ -23,5 +23,5 @@ WORKDIR /app
 # Copy built files from builder
 COPY --from=builder /app/build /app
 
-# Simple HTTP server (optional, just to keep container runnig)
+# Simple HTTP server (optional, just to keep container running)
 CMD ["sh", "-c", "while true; do sleep 3600; done"]
