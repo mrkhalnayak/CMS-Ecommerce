@@ -20,7 +20,7 @@ RUN npm run build
 # Stage 2: Serve static files
 FROM nginx:1.21-alpine
 
-# Copy built files
+# Copy built file
 COPY --from=builder /app/build /usr/share/nginx/html
 
 EXPOSE 80
