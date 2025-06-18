@@ -3,17 +3,13 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files (using wildcard to handle missing package-lock.json)
-COPY package*.json ./
+# First copy only package.json
+COPY package.json .
 
-# Install dependencies (create package-lock.json if missing)
-RUN if [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install --legacy-peer-deps; \
-    fi
+# Install dependencies (force generate lockfile if missing)
+RUN npm install --legacy-peer-deps
 
-# Copy all source files
+# Now copy all other files
 COPY . .
 
 # Build the app
