@@ -4,11 +4,11 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 
 # Install dependencies with clean cache
 RUN npm cache clean --force && \
-    npm install --legacy-peer-deps
+    npm install --legacy-peer-deps --prefer-offline
 
 # Copy all source files
 COPY . .
@@ -22,6 +22,9 @@ FROM nginx:1.21-alpine
 
 # Copy built files
 COPY --from=builder /app/build /usr/share/nginx/html
+
+# Copy nginx config (optional but recommended)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
