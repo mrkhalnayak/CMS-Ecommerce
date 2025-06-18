@@ -1,27 +1,27 @@
 # Stage 1: Build the React app
-FROM node:18 AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package*.json ./
-
-# Install dependencies
+# Copy and install dependencies
+COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy all source files
+# Copy the source code and build the app
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Stage 2: Create lightweight serving image
-FROM busybox:musl
+# Stage 2: Serve with NGINX
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy the build output to NGINX's default HTML directory
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy built files from builder
-COPY --from=builder /app/build /app
+# (Optional) Remove default NGINX config if not needed
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Simple HTTP server (optional, just to keep the container running)
-CMD ["sh", "-c", "while true; do sleep 3600; done"]
+# Expose port 80
+EXPOSE 80
+
+# Start NGINX
+CMD ["nginx", "-g", "daemon off;"]

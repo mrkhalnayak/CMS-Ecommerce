@@ -5,13 +5,12 @@ metadata:
   namespace: micro-shop
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    # Remove rewrite-target if your backends expect unmodified paths
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
   - http:
       paths:
-      # Backend APIs - exact paths
       - path: /api/users
         pathType: Prefix
         backend:
@@ -19,7 +18,6 @@ spec:
             name: user-service
             port:
               number: 80
-              
       - path: /api/products
         pathType: Prefix
         backend:
@@ -27,7 +25,6 @@ spec:
             name: product-service
             port:
               number: 80
-              
       - path: /api/orders
         pathType: Prefix
         backend:
@@ -35,8 +32,6 @@ spec:
             name: order-service
             port:
               number: 80
-      
-      # Frontend - catch-all
       - path: /
         pathType: Prefix
         backend:
