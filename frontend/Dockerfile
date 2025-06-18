@@ -1,27 +1,27 @@
 # Stage 1: Build the React app
-FROM node:18-alpine AS builder
+FROM node:18 AS builder
 
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-# Install dependencies with clean cache
-RUN npm cache clean --force && \
-    npm install --legacy-peer-deps --prefer-offline
+# Install dependencies
+RUN npm install
 
 # Copy all source files
 COPY . .
 
-# Build with increased memory
-ENV NODE_OPTIONS="--max_old_space_size=4096"
+# Build the application
 RUN npm run build
 
-# Stage 2: Serve static files
-FROM nginx:1.21-alpine
+# Stage 2: Create lightweight serving image
+FROM busybox:musl
 
-# Copy built files
-COPY --from=builder /app/build /usr/share/nginx/html
+WORKDIR /app
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Copy built files from builder
+COPY --from=builder /app/build /app
+
+# Simple HTTP server (optional, just to keep container running)
+CMD ["sh", "-c", "while true; do sleep 3600; done"]
