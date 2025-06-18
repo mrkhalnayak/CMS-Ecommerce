@@ -1,79 +1,181 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-// In production, our Nginx reverse proxy will route this.
-// In development, you'd set up a proxy in package.json.
 const API_BASE_URL = '/api';
 
 function App() {
-  const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [products, setProducts] = useState([]);
-  const [statusMessage, setStatusMessage] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [status, setStatus] = useState('');
+  const [view, setView] = useState('products'); // 'products' or 'orders'
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quantity, setQuantity] = useState(1);
 
+  // Fetch initial data
   useEffect(() => {
-    // Fetch users
-    fetch(`${API_BASE_URL}/users`)
-      .then(res => res.json())
-      .then(data => setUsers(data))
-      .catch(err => console.error("Failed to fetch users:", err));
+    const fetchData = async () => {
+      try {
+        // In a real app, you'd have authentication flow
+        const userRes = await fetch(`${API_BASE_URL}/users/1`);
+        const user = await userRes.json();
+        setCurrentUser(user);
 
-    // Fetch products
-    fetch(`${API_BASE_URL}/products`)
-      .then(res => res.json())
-      .then(data => setProducts(data))
-      .catch(err => console.error("Failed to fetch products:", err));
+        const productsRes = await fetch(`${API_BASE_URL}/products`);
+        const productsData = await productsRes.json();
+        setProducts(productsData);
+
+        const ordersRes = await fetch(`${API_BASE_URL}/orders?userId=1`);
+        const ordersData = await ordersRes.json();
+        setOrders(ordersData);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const handleOrder = (productId, productName) => {
-    // Simple order for user 1 (john_doe) and the selected product
-    setStatusMessage(`Placing order for ${productName}...`);
-    fetch(`${API_BASE_URL}/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: 1, productId: productId, quantity: 1 }),
-    })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(`Order failed with status: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then(data => {
-      setStatusMessage(`Order successful! Order ID: ${data.orderId}`);
-    })
-    .catch(err => {
-      console.error(err);
-      setStatusMessage(`Order failed! Check console for details.`);
-    });
+  const handleOrder = async () => {
+    if (!selectedProduct) return;
+
+    setStatus(`Placing order for ${selectedProduct.name}...`);
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          productId: selectedProduct.id,
+          quantity: quantity,
+          shippingAddress: currentUser.address || 'Default address'
+        }),
+      });
+
+      if (!response.ok) throw new Error('Order failed');
+
+      const data = await response.json();
+      setStatus(`Order successful! ID: ${data.orderId}`);
+      
+      // Refresh orders
+      const ordersRes = await fetch(`${API_BASE_URL}/orders?userId=1`);
+      setOrders(await ordersRes.json());
+      
+      // Refresh products (stock may have changed)
+      const productsRes = await fetch(`${API_BASE_URL}/products`);
+      setProducts(await productsRes.json());
+      
+      setSelectedProduct(null);
+    } catch (error) {
+      setStatus(`Order failed: ${error.message}`);
+      console.error(error);
+    }
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Micro-Shop EKS Demo</h1>
-      </header>
-      <main className="container">
-        <section className="card">
-          <h2>Available Users</h2>
-          <ul>{users.length > 0 ? users.map(u => <li key={u.id}>{u.username} (ID: {u.id})</li>) : <li>Loading...</li>}</ul>
-        </section>
-
-        <section className="card">
-          <h2>Available Products</h2>
-          <div className="product-list">
-            {products.length > 0 ? products.map(p => (
-              <div key={p.id} className="product-item">
-                <span>{p.name} - ${p.price}</span>
-                <button onClick={() => handleOrder(p.id, p.name)}>Order 1</button>
-              </div>
-            )) : <p>Loading...</p>}
+    <div className="app">
+      <header className="app-header">
+        <h1>Micro-Shop</h1>
+        {currentUser && (
+          <div className="user-info">
+            <span>Welcome, {currentUser.username}</span>
           </div>
-        </section>
+        )}
+      </header>
 
-        <section className="card">
-          <h2>Order Status</h2>
-          <p className="status-message">{statusMessage || 'Click an "Order" button to place an order for John Doe.'}</p>
-        </section>
+      <nav className="app-nav">
+        <button 
+          className={view === 'products' ? 'active' : ''}
+          onClick={() => setView('products')}
+        >
+          Products
+        </button>
+        <button 
+          className={view === 'orders' ? 'active' : ''}
+          onClick={() => setView('orders')}
+        >
+          My Orders
+        </button>
+      </nav>
+
+      <main className="app-main">
+        {view === 'products' ? (
+          <section className="products-section">
+            <h2>Available Products</h2>
+            <div className="product-grid">
+              {products.map(product => (
+                <div 
+                  key={product.id} 
+                  className={`product-card ${selectedProduct?.id === product.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedProduct(product)}
+                >
+                  {product.image_url && (
+                    <div className="product-image">
+                      <img src={product.image_url} alt={product.name} />
+                    </div>
+                  )}
+                  <div className="product-details">
+                    <h3>{product.name}</h3>
+                    <p className="price">${product.price.toFixed(2)}</p>
+                    <p className="stock">Stock: {product.stock}</p>
+                    <p className="description">{product.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {selectedProduct && (
+              <div className="order-form">
+                <h3>Order {selectedProduct.name}</h3>
+                <div className="form-group">
+                  <label>Quantity:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={selectedProduct.stock}
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  />
+                </div>
+                <button 
+                  onClick={handleOrder}
+                  disabled={selectedProduct.stock < quantity}
+                >
+                  {selectedProduct.stock < quantity ? 'Out of Stock' : 'Place Order'}
+                </button>
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="orders-section">
+            <h2>My Order History</h2>
+            {orders.length > 0 ? (
+              <div className="order-list">
+                {orders.map(order => (
+                  <div key={order.id} className="order-card">
+                    <div className="order-header">
+                      <span>Order #{order.id}</span>
+                      <span className={`status ${order.status}`}>{order.status}</span>
+                    </div>
+                    <div className="order-details">
+                      <p>{order.product_name} (x{order.quantity})</p>
+                      <p>Total: ${order.total_price.toFixed(2)}</p>
+                      <p>Order Date: {new Date(order.order_date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No orders found.</p>
+            )}
+          </section>
+        )}
+
+        {status && (
+          <div className={`status-message ${status.includes('failed') ? 'error' : 'success'}`}>
+            {status}
+          </div>
+        )}
       </main>
     </div>
   );

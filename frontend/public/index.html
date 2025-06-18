@@ -2,23 +2,106 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Micro-Shop Application built with React and EKS"
-    />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="theme-color" content="#317EFB"/>
+    <meta name="description" content="Full-featured e-commerce platform built with React and Kubernetes" />
+    <meta name="keywords" content="ecommerce, shop, react, kubernetes, microservices" />
+    <meta name="author" content="Your Company" />
     
-    <title>Micro-Shop</title>
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.webmanifest" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Preconnect to API endpoints -->
+    <link rel="preconnect" href="https://your-eks-ingress-url.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="%PUBLIC_URL%/static/css/main.css" as="style" />
+    <link rel="preload" href="%PUBLIC_URL%/static/js/main.js" as="script" />
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Social Media Meta Tags -->
+    <meta property="og:title" content="Micro-Shop | Modern E-Commerce Platform" />
+    <meta property="og:description" content="Shop the latest products with our React-powered microservices architecture" />
+    <meta property="og:image" content="%PUBLIC_URL%/social-share.png" />
+    <meta property="og:url" content="https://your-shop-url.com" />
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <title>Micro-Shop | Modern E-Commerce</title>
+    
+    <!-- Safari Pinned Tab Color -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Micro-Shop" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#2b5797" />
+    <meta name="msapplication-TileImage" content="%PUBLIC_URL%/mstile-144x144.png" />
+    
+    <!-- Chrome Theme Color -->
+    <meta name="theme-color" content="#ffffff" />
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <div class="noscript-warning">
+        <h1>JavaScript Required</h1>
+        <p>This application requires JavaScript to function properly. Please enable JavaScript in your browser settings.</p>
+        <p>Alternatively, you can visit our <a href="/static/fallback">basic HTML version</a>.</p>
+      </div>
+    </noscript>
     
-    <!-- This is the crucial part. REact will inject the entire application into this div. -->
-    <div id="root"></div>
-
+    <!-- React root element with loading state -->
+    <div id="root">
+      <div class="app-loading">
+        <div class="loading-spinner"></div>
+        <p>Loading Micro-Shop...</p>
+      </div>
+    </div>
+    
+    <!-- Inline critical CSS for loading animation -->
+    <style>
+      .app-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        font-family: 'Inter', sans-serif;
+      }
+      .loading-spinner {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .noscript-warning {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem;
+        font-family: sans-serif;
+        text-align: center;
+      }
+    </style>
+    
+    <!-- Production error tracking -->
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        if (window.ga) {
+          ga('send', 'event', 'JavaScript Error', message, source + ':' + lineno);
+        }
+        return true;
+      };
+    </script>
   </body>
 </html>
-
